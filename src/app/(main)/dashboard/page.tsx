@@ -85,7 +85,13 @@ export default async function DashboardPage() {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">No policies found.</TableCell>
+                    <TableCell colSpan={4} className="text-center h-48">
+                        <h3 className="font-semibold text-lg">No Policies Yet</h3>
+                        <p className="text-muted-foreground mb-4">It looks like you haven't purchased any policies. Get started today!</p>
+                        <Button asChild>
+                            <Link href="/policies">Explore Policies</Link>
+                        </Button>
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -117,7 +123,9 @@ export default async function DashboardPage() {
                     )
                 }) : (
                     <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                        <p>No recent activity.</p>
+                        <HelpCircle className="mx-auto h-8 w-8 mb-2 text-muted-foreground"/>
+                        <h3 className="font-semibold text-lg mb-1">No Recent Activity</h3>
+                        <p>Actions like purchasing policies or filing claims will appear here.</p>
                     </div>
                 )}
             </div>

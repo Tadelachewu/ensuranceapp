@@ -3,6 +3,7 @@
 
 import { pool } from '@/lib/firebase';
 import { handleDbError } from '@/lib/db-errors';
+import { createActivity } from './activityService';
 
 const USER_ID = "user_123";
 
@@ -71,4 +72,47 @@ export async function getPolicyById(policyId: string): Promise<Policy | null> {
     } finally {
       client?.release();
     }
+}
+
+export async function createPolicy(policyData: Omit<Policy, 'id' | 'userId' | 'status' | 'startDate' | 'endDate' | 'nextDueDate'>, userId: string = USER_ID): Promise<Policy> {
+  if (!process.env.POSTGRES_URL) {
+    throw new Error("Database is not configured. POSTGRES_URL is not set.");
+  }
+  const { type, premium, coverageAmount, deductible } = policyData;
+  const id = `POL${Math.floor(100000 + Math.random() * 900000)}`;
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setFullYear(startDate.getFullYear() + 1);
+
+  let client;
+  try {
+    client = await pool.connect();
+    const query = `
+      INSERT INTO policies (id, user_id, type, status, premium, coverage_amount, deductible, start_date, end_date, next_due_date)
+      VALUES ($1, $2, $3, 'Active', $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+    `;
+    const nextDueDate = new Date(startDate);
+    nextDueDate.setMonth(startDate.getMonth() + 1);
+    
+    const values = [id, userId, type, premium, coverageAmount, deductible, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], nextDueDate.toISOString().split('T')[0]];
+    const res = await client.query(query, values);
+    const newPolicy = dbToPolicy(res.rows[0]);
+
+    // Create a corresponding activity log
+    await createActivity({
+        description: `New ${type} policy purchased.`,
+        iconName: 'ShieldCheck'
+    }, userId);
+
+    return newPolicy;
+  } catch (err) {
+    handleDbError(err, 'createPolicy');
+    if (err instanceof Error) {
+      throw new Error(`DB Error: ${err.message}`);
+    }
+    throw new Error('An unknown error occurred while creating the policy.');
+  } finally {
+    client?.release();
+  }
 }

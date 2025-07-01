@@ -3,6 +3,7 @@
 
 import { pool } from '@/lib/firebase';
 import { handleDbError } from '@/lib/db-errors';
+import { createActivity } from './activityService';
 
 const USER_ID = "user_123";
 
@@ -46,10 +47,20 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       `;
       const values = [claimNumber, userId, policyId, type, incidentDate, description];
       const res = await client.query(query, values);
+      
+      await createActivity({
+        description: `New claim submitted for policy ${policyId}.`,
+        iconName: 'FilePlus'
+      }, userId);
+
       return dbToClaim(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createClaim');
-      throw new Error('Failed to create claim.');
+      if (err instanceof Error) {
+        // Re-throw the specific database error for the UI to handle
+        throw new Error(`DB Error: ${err.message}`);
+      }
+      throw new Error('An unknown error occurred while creating the claim.');
     } finally {
       client?.release();
     }

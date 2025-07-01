@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
+import { createPolicy } from "@/services/policyService";
 
 import {
   Card,
@@ -31,12 +33,14 @@ const basePremiums: { [key: string]: number } = {
 };
 
 export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [coverageAmount, setCoverageAmount] = useState(100000);
   const [deductible, setDeductible] = useState(500);
   const [monthlyPremium, setMonthlyPremium] = useState(0);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
   useEffect(() => {
@@ -79,6 +83,36 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
     }
   };
 
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+    try {
+        const policyTypeCapitalized = policyType.charAt(0).toUpperCase() + policyType.slice(1);
+        await createPolicy({
+            type: policyTypeCapitalized as any, // Cast to any to satisfy the strict type
+            premium: monthlyPremium,
+            coverageAmount: coverageAmount,
+            deductible: deductible,
+        });
+        toast({
+            title: "Policy Purchased!",
+            description: `Your new ${policyType} insurance is now active.`,
+            className: "bg-green-100 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
+        });
+        // Redirect to dashboard to see the new policy
+        router.push('/dashboard');
+        router.refresh(); // ensures server components refetch data
+    } catch (error) {
+        console.error("Error purchasing policy:", error);
+        toast({
+            variant: "destructive",
+            title: "Purchase Failed",
+            description: error instanceof Error ? error.message : "Failed to purchase policy. Please try again.",
+        });
+    } finally {
+        setIsPurchasing(false);
+    }
+  };
+
   return (
     <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -111,7 +145,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={getAiSuggestions} disabled={isLoading}>
+                    <Button onClick={getAiSuggestions} disabled={isLoading || isPurchasing}>
                         {isLoading ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</>
                         ) : (
@@ -162,7 +196,10 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full">Purchase Policy</Button>
+                <Button className="w-full" onClick={handlePurchase} disabled={isPurchasing}>
+                    {isPurchasing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Purchase Policy
+                </Button>
             </CardFooter>
             </Card>
         </div>

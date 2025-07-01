@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Download, FolderOpen } from "lucide-react";
 import { getDocumentsByUserId } from "@/services/documentService";
 
 export default async function DocumentsPage() {
@@ -66,8 +66,10 @@ export default async function DocumentsPage() {
                 ))
               ) : (
                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      No documents found.
+                    <TableCell colSpan={5} className="h-48 text-center">
+                        <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="font-semibold text-lg">Your Document Center is Empty</h3>
+                        <p className="text-muted-foreground">Policy documents and claim forms will appear here once generated.</p>
                     </TableCell>
                   </TableRow>
               )}
