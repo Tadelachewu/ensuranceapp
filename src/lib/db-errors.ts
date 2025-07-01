@@ -1,5 +1,4 @@
 // src/lib/db-errors.ts
-'use server';
 
 export function handleDbError(err: unknown, context: string): void {
   console.error(`Database Error in ${context}:`, err);
