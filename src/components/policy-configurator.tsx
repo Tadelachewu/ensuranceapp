@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
-import { createPolicy } from "@/services/policyService";
+import { createPolicy, Policy } from "@/services/policyService";
 
 import {
   Card,
@@ -88,7 +89,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
     try {
         const policyTypeCapitalized = policyType.charAt(0).toUpperCase() + policyType.slice(1);
         await createPolicy({
-            type: policyTypeCapitalized as any, // Cast to any to satisfy the strict type
+            type: policyTypeCapitalized as Policy['type'],
             premium: monthlyPremium,
             coverageAmount: coverageAmount,
             deductible: deductible,

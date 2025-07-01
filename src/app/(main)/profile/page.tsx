@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,6 +81,8 @@ export default function ProfilePage() {
         title: "Profile Updated",
         description: "Your information has been saved successfully.",
       });
+      // Refresh server components to reflect changes (e.g., in the sidebar)
+      router.refresh();
     } catch (error) {
       console.error("Failed to update profile", error);
       toast({
@@ -146,7 +150,7 @@ export default function ProfilePage() {
                         <AvatarImage src={user?.avatar} data-ai-hint="person photo" />
                         <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline">Change Photo</Button>
+                    <Button variant="outline" type="button" disabled>Change Photo</Button>
                 </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
