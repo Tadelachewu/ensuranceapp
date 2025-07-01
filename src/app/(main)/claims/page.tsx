@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -32,10 +33,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { createClaim } from "@/services/claimService";
 
 const claimSchema = z.object({
   policyNumber: z.string().regex(/^POL\d{6}$/, "Invalid policy number format (e.g., POL123456)"),
@@ -48,20 +50,39 @@ type ClaimFormValues = z.infer<typeof claimSchema>;
 
 export default function ClaimsPage() {
     const { toast } = useToast();
-  const form = useForm<ClaimFormValues>({
-    resolver: zodResolver(claimSchema),
-    defaultValues: {
-        policyNumber: "POL",
-    }
-  });
-
-  function onSubmit(data: ClaimFormValues) {
-    console.log(data);
-    toast({
-        title: "Claim Submitted Successfully!",
-        description: `Your claim for policy ${data.policyNumber} has been received.`,
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const form = useForm<ClaimFormValues>({
+        resolver: zodResolver(claimSchema),
+        defaultValues: {
+            policyNumber: "POL",
+        }
     });
-    form.reset();
+
+  async function onSubmit(data: ClaimFormValues) {
+    setIsSubmitting(true);
+    try {
+        await createClaim({
+            policyId: data.policyNumber,
+            type: data.claimType,
+            incidentDate: format(data.incidentDate, "yyyy-MM-dd"),
+            description: data.description,
+        });
+
+        toast({
+            title: "Claim Submitted Successfully!",
+            description: `Your claim for policy ${data.policyNumber} has been received.`,
+        });
+        form.reset({ policyNumber: "POL", description: "", claimType: undefined, incidentDate: undefined });
+    } catch (error) {
+        console.error("Failed to submit claim", error);
+        toast({
+            title: "Submission Failed",
+            description: "There was a problem submitting your claim. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
@@ -102,7 +123,7 @@ export default function ClaimsPage() {
                       <FormLabel>Claim Type</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -190,7 +211,10 @@ export default function ClaimsPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit">Submit Claim</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Claim
+              </Button>
             </form>
           </Form>
         </CardContent>
