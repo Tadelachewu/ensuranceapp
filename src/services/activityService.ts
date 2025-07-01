@@ -27,7 +27,12 @@ function handleDbError(err: unknown, context: string): void {
   if (err instanceof Error) {
     const errCode = (err as any).code;
     if (errCode === 'ECONNREFUSED') {
-      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+      console.error(`
+❌ DB connection refused. This is likely an environment issue.
+Please check the following:
+1. Your POSTGRES_URL in the .env file is correct and does not have typos. The format is: postgresql://user:password@host:port/database
+2. The database server is running and accessible from your application.
+3. There are no firewalls blocking the connection to your database port.`);
     } else if (errCode === '42P01') {
       console.warn('Warning: A table was not found. Did you run `npm run db:setup`?');
     }
