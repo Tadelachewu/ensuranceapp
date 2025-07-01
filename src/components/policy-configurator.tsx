@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
 
 import {
@@ -15,30 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-
-const profileSchema = z.object({
-  age: z.coerce.number().min(18, "Must be at least 18").max(100),
-  location: z.string().min(2, "Location is required"),
-  familySize: z.coerce.number().min(1, "Family size must be at least 1"),
-  occupation: z.string().min(2, "Occupation is required"),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface PolicyConfiguratorProps {
   policyType: string;
@@ -60,33 +39,17 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      age: 35,
-      location: "New York, NY",
-      familySize: 2,
-      occupation: "Software Engineer",
-    },
-  });
-
   useEffect(() => {
     const base = basePremiums[policyType] || 75;
     const calculatedPremium = base + (coverageAmount / 10000) * 2 + (500 - deductible) / 10;
     setMonthlyPremium(Math.max(20, calculatedPremium));
   }, [coverageAmount, deductible, policyType]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
+  const getAiSuggestions = async () => {
     setIsLoading(true);
     setSuggestions([]);
     
     const input: RecommendAddOnsInput = {
-        userProfile: {
-            age: data.age,
-            location: data.location,
-            familySize: data.familySize,
-            occupation: data.occupation,
-        },
         selectedCoverage: {
             policyType: policyType,
             coverageAmount: coverageAmount,
@@ -119,87 +82,44 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   return (
     <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Your Profile</CardTitle>
-                    <CardDescription>
-                        This information helps us tailor suggestions for you.
-                    </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="age" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Age</FormLabel>
-                                <FormControl><Input type="number" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="location" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Location (City, State)</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="familySize" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Family Size</FormLabel>
-                                <FormControl><Input type="number" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="occupation" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Occupation</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                    </CardContent>
-                </Card>
-                
-                <Card className="mt-8">
-                    <CardHeader>
-                        <CardTitle>Smart Add-On Suggestions</CardTitle>
-                        <CardDescription>Let our AI find the best add-ons to enhance your coverage.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {suggestions.length > 0 ? (
-                            <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
-                                <Sparkles className="h-4 w-4 text-green-600" />
-                                <AlertTitle className="text-green-800 dark:text-green-400">Recommended For You!</AlertTitle>
-                                <AlertDescription>
-                                    <ul className="mt-2 space-y-2">
-                                        {suggestions.map((item, index) => (
-                                            <li key={index} className="flex items-center gap-2">
-                                                <CheckCircle2 className="h-4 w-4 text-green-600"/>
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </AlertDescription>
-                            </Alert>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Smart Add-On Suggestions</CardTitle>
+                    <CardDescription>Let our AI find the best add-ons to enhance your coverage based on your saved profile. Make sure your profile is up-to-date!</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {suggestions.length > 0 ? (
+                        <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+                            <Sparkles className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-400">Recommended For You!</AlertTitle>
+                            <AlertDescription>
+                                <ul className="mt-2 space-y-2">
+                                    {suggestions.map((item, index) => (
+                                        <li key={index} className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-green-600"/>
+                                            <span>{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                         <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                            <Sparkles className="mx-auto h-8 w-8 mb-2"/>
+                            <p>Your personalized add-on suggestions will appear here.</p>
+                         </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={getAiSuggestions} disabled={isLoading}>
+                        {isLoading ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</>
                         ) : (
-                             <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                                <Sparkles className="mx-auto h-8 w-8 mb-2"/>
-                                <p>Your personalized add-on suggestions will appear here.</p>
-                             </div>
+                            <><Sparkles className="mr-2 h-4 w-4" /> Get Suggestions</>
                         )}
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</>
-                            ) : (
-                                <><Sparkles className="mr-2 h-4 w-4" /> Get Suggestions</>
-                            )}
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </form>
-            </Form>
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
 
         <div className="lg:col-span-1">
