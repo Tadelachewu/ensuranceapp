@@ -109,7 +109,7 @@ export async function createPolicy(policyData: Omit<Policy, 'id' | 'userId' | 's
   } catch (err) {
     handleDbError(err, 'createPolicy');
     if (err instanceof Error) {
-      throw new Error(`DB Error: ${err.message}`);
+      throw new Error(`A database error occurred: ${err.message}`);
     }
     throw new Error('An unknown error occurred while creating the policy.');
   } finally {

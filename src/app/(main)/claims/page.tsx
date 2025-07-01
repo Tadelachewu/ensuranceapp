@@ -84,18 +84,9 @@ export default function ClaimsPage() {
       form.reset();
     } catch (error) {
       console.error("Failed to submit claim", error);
-      let description = "There was a problem submitting your claim. Please try again.";
-      if (error instanceof Error) {
-        // Provide more user-friendly feedback for the most common database error
-        if (error.message.includes('violates foreign key constraint')) {
-            description = "The selected policy is not valid. Please refresh the page and select an active policy from the list.";
-        } else {
-            description = error.message;
-        }
-      }
       toast({
         title: "Submission Failed",
-        description: description,
+        description: error instanceof Error ? error.message : "An unknown error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {

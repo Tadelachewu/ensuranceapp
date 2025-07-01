@@ -56,9 +56,12 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       return dbToClaim(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createClaim');
+      // Check for foreign key violation (PostgreSQL error code '23503')
+      if (err && typeof err === 'object' && 'code' in err && err.code === '23503') {
+        throw new Error('The selected policy is not valid. Please refresh the page and select an active policy.');
+      }
       if (err instanceof Error) {
-        // Re-throw the specific database error for the UI to handle
-        throw new Error(`DB Error: ${err.message}`);
+        throw new Error(`A database error occurred: ${err.message}`);
       }
       throw new Error('An unknown error occurred while creating the claim.');
     } finally {

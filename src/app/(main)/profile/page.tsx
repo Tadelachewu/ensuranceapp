@@ -86,8 +86,8 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Failed to update profile", error);
       toast({
-        title: "Error",
-        description: "Could not save your profile.",
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Could not save your profile. Please try again.",
         variant: "destructive",
       });
     }

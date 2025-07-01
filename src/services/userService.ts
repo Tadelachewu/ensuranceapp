@@ -115,6 +115,9 @@ export async function updateUserProfile(profileData: Partial<UserProfile>): Prom
     await client.query(query, values);
   } catch (err) {
     handleDbError(err, 'updateUserProfile');
+    if (err instanceof Error) {
+      throw new Error(`A database error occurred: ${err.message}`);
+    }
     throw new Error('Failed to update user profile.');
   } finally {
     client?.release();
