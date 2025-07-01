@@ -10,3 +10,9 @@ export const pool = new Pool({
     rejectUnauthorized: false
   } : false,
 });
+
+// Add an error listener to the pool to prevent crashes on connection errors.
+// This is important for handling cases where the database is temporarily unavailable.
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle pg client', err);
+});
