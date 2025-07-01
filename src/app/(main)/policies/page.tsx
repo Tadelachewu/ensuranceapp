@@ -77,12 +77,12 @@ export default function PoliciesPage() {
             </CardHeader>
             <CardContent className="flex-grow"></CardContent>
             <CardFooter>
-              <Link href={`/policies/${policy.type}`} passHref legacyBehavior>
-                <Button className="w-full">
+              <Button asChild className="w-full">
+                <Link href={`/policies/${policy.type}`}>
                   Get a Quote
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </CardFooter>
           </Card>
         ))}

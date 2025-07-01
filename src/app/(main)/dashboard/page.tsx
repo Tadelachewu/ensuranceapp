@@ -40,12 +40,12 @@ export default async function DashboardPage() {
         title="Welcome Back, Alex!"
         description="Here’s a summary of your insurance portfolio."
       >
-        <Link href="/policies" passHref>
-          <Button>Get a New Policy</Button>
-        </Link>
-        <Link href="/claims" passHref>
-          <Button variant="outline">File a Claim</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/policies">Get a New Policy</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/claims">File a Claim</Link>
+        </Button>
       </PageHeader>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
