@@ -1,7 +1,12 @@
 import 'dotenv/config'; // To load .env file
-import { pool } from '../src/lib/firebase';
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: process.env.POSTGRES_URL?.includes('sslmode=disable') ? false : undefined,
+});
 
 async function setupDatabase() {
   // First, check if the environment variable is set at all. This gives the best error message.
