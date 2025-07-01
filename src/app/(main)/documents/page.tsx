@@ -16,17 +16,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Download } from "lucide-react";
+import { getDocumentsByUserId } from "@/services/documentService";
 
-const documents = [
-  { name: "Auto Policy Agreement - POL456789", type: "Policy Document", date: "2023-07-15", size: "1.2 MB" },
-  { name: "Homeowners Insurance Certificate - POL123456", type: "Certificate of Insurance", date: "2023-06-20", size: "450 KB" },
-  { name: "Life Insurance Beneficiary Form - POL789123", type: "Form", date: "2023-08-01", size: "300 KB" },
-  { name: "Claim #C-9876 Submission Confirmation", type: "Claim Document", date: "2024-05-18", size: "150 KB" },
-  { name: "Premium Payment Receipt - July 2024", type: "Receipt", date: "2024-07-01", size: "80 KB" },
-  { name: "Policy Renewal Notice - Auto", type: "Notice", date: "2024-06-15", size: "220 KB" },
-];
+export default async function DocumentsPage() {
+  const documents = await getDocumentsByUserId();
 
-export default function DocumentsPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <PageHeader
@@ -52,20 +46,31 @@ export default function DocumentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents.map((doc) => (
-                <TableRow key={doc.name}>
-                  <TableCell className="font-medium">{doc.name}</TableCell>
-                  <TableCell>{doc.type}</TableCell>
-                  <TableCell>{doc.date}</TableCell>
-                  <TableCell>{doc.size}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <Download className="h-4 w-4" />
-                      <span className="sr-only">Download</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {documents.length > 0 ? (
+                documents.map((doc) => (
+                  <TableRow key={doc.id}>
+                    <TableCell className="font-medium">{doc.name}</TableCell>
+                    <TableCell>{doc.type}</TableCell>
+                    <TableCell>{doc.uploadDate}</TableCell>
+                    <TableCell>{doc.fileSizeKb} KB</TableCell>
+                    <TableCell className="text-right">
+                       <Button variant="ghost" size="icon" asChild>
+                        {/* In a real app, storageUrl would point to a downloadable link */}
+                        <a href="#" onClick={(e) => e.preventDefault()} title="Download not implemented">
+                          <Download className="h-4 w-4" />
+                          <span className="sr-only">Download</span>
+                        </a>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                 <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      No documents found.
+                    </TableCell>
+                  </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
