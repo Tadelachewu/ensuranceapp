@@ -13,6 +13,7 @@ export interface UserProfile {
   avatar: string;
 }
 
+// For this demo, a single-user ID is used across services.
 const USER_ID = "user_123";
 
 const defaultUser = {
@@ -85,14 +86,14 @@ export async function getUserProfile(): Promise<UserProfile> {
 }
 
 export async function updateUserProfile(profileData: Partial<UserProfile>): Promise<void> {
-  const { name, email, age, location, familySize, occupation } = profileData;
+  const { name, email, age, location, familySize, occupation, avatar } = profileData;
   let client;
   try {
     client = await pool.connect();
     const query = `
       UPDATE users
-      SET name = $1, email = $2, age = $3, location = $4, family_size = $5, occupation = $6
-      WHERE id = $7;
+      SET name = $1, email = $2, age = $3, location = $4, family_size = $5, occupation = $6, avatar = $7, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $8;
     `;
     // Ensure all values are defined to prevent errors
     const values = [
@@ -102,6 +103,7 @@ export async function updateUserProfile(profileData: Partial<UserProfile>): Prom
         location || null,
         familySize || null,
         occupation || null,
+        avatar || null,
         USER_ID
     ];
     await client.query(query, values);
