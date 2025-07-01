@@ -60,7 +60,7 @@ export async function createActivity(activityData: Omit<Activity, 'id' | 'userId
       return dbToActivity(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createActivity');
-      throw new Error('Failed to create activity.');
+      throw new Error(`Failed to create activity. DB Error: ${(err as Error).message}`);
     } finally {
       client?.release();
     }

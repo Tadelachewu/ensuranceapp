@@ -49,7 +49,7 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       return dbToClaim(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createClaim');
-      throw new Error('Failed to create claim.');
+      throw new Error(`Failed to create claim. DB Error: ${(err as Error).message}`);
     } finally {
       client?.release();
     }

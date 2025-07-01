@@ -77,7 +77,7 @@ export function ClaimForm({ policies }: ClaimFormProps) {
         console.error("Failed to submit claim", error);
         toast({
             title: "Submission Failed",
-            description: "There was a problem submitting your claim. Please try again.",
+            description: error instanceof Error ? error.message : "There was a problem submitting your claim. Please try again.",
             variant: "destructive",
         });
     } finally {

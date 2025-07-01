@@ -115,7 +115,7 @@ export async function createPolicy(
     return dbToPolicy(res.rows[0]);
   } catch (err) {
     handleDbError(err, 'createPolicy');
-    throw new Error('Failed to create policy.');
+    throw new Error(`Failed to create policy. DB Error: ${(err as Error).message}`);
   } finally {
     if (client) {
       client.release();
