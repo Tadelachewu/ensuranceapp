@@ -43,6 +43,13 @@ function dbToUserProfile(dbUser: any): UserProfile {
 
 
 export async function getUserProfile(): Promise<UserProfile> {
+  const fallbackUser = { ...defaultUser, familySize: defaultUser.family_size };
+  
+  if (!process.env.POSTGRES_URL) {
+      console.warn("POSTGRES_URL is not set. Returning default user data.");
+      return fallbackUser;
+  }
+  
   let client;
   try {
     client = await pool.connect();
@@ -74,18 +81,20 @@ export async function getUserProfile(): Promise<UserProfile> {
     }
   } catch (err) {
     console.error('Database Error:', err);
-    // If the table doesn't exist, we can return the default user to allow the UI to render.
-    if (err instanceof Error && 'code' in err && err.code === '42P01') {
-        console.warn("`users` table not found. Returning default user data. Please run the CREATE TABLE script.");
-        return { id: USER_ID, ...defaultUser, familySize: defaultUser.family_size };
+    // If the table doesn't exist or connection fails, return default user.
+    if (err instanceof Error && 'code' in err) {
+        console.warn(`Database error (${err.code}). Returning default user data.`);
     }
-    throw new Error('Failed to fetch user profile.');
+    return fallbackUser;
   } finally {
     client?.release();
   }
 }
 
 export async function updateUserProfile(profileData: Partial<UserProfile>): Promise<void> {
+  if (!process.env.POSTGRES_URL) {
+    throw new Error("Database is not configured. POSTGRES_URL is not set.");
+  }
   const { name, email, age, location, familySize, occupation, avatar } = profileData;
   let client;
   try {

@@ -29,6 +29,9 @@ function dbToClaim(dbClaim: any): Claim {
 }
 
 export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 'userId' | 'status'>, userId: string = USER_ID): Promise<Claim> {
+    if (!process.env.POSTGRES_URL) {
+        throw new Error("Database is not configured. POSTGRES_URL is not set.");
+    }
     const { policyId, type, incidentDate, description } = claimData;
     const claimNumber = `C-${Date.now()}`; // Simple unique claim number
     let client;
@@ -51,6 +54,10 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
 }
 
 export async function getClaimsByUserId(userId: string = USER_ID): Promise<Claim[]> {
+    if (!process.env.POSTGRES_URL) {
+        console.warn("POSTGRES_URL is not set. Returning empty array for claims.");
+        return [];
+    }
     let client;
     try {
       client = await pool.connect();
@@ -60,9 +67,8 @@ export async function getClaimsByUserId(userId: string = USER_ID): Promise<Claim
       console.error('Database Error:', err);
       if (err instanceof Error && 'code' in err && err.code === '42P01') {
           console.warn("`claims` table not found. Returning empty array.");
-          return [];
       }
-      throw new Error('Failed to fetch claims.');
+      return [];
     } finally {
       client?.release();
     }

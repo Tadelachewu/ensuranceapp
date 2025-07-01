@@ -33,6 +33,10 @@ function dbToPolicy(dbPolicy: any): Policy {
 }
 
 export async function getPoliciesByUserId(userId: string = USER_ID): Promise<Policy[]> {
+  if (!process.env.POSTGRES_URL) {
+      console.warn("POSTGRES_URL is not set. Returning empty array for policies.");
+      return [];
+  }
   let client;
   try {
     client = await pool.connect();
@@ -42,15 +46,18 @@ export async function getPoliciesByUserId(userId: string = USER_ID): Promise<Pol
     console.error('Database Error:', err);
     if (err instanceof Error && 'code' in err && err.code === '42P01') {
         console.warn("`policies` table not found. Returning empty array.");
-        return [];
     }
-    throw new Error('Failed to fetch policies.');
+    return [];
   } finally {
     client?.release();
   }
 }
 
 export async function getPolicyById(policyId: string): Promise<Policy | null> {
+    if (!process.env.POSTGRES_URL) {
+      console.warn("POSTGRES_URL is not set. Returning null for policy.");
+      return null;
+    }
     let client;
     try {
       client = await pool.connect();
@@ -61,7 +68,7 @@ export async function getPolicyById(policyId: string): Promise<Policy | null> {
       return null;
     } catch (err) {
       console.error('Database Error:', err);
-      throw new Error('Failed to fetch policy.');
+      return null;
     } finally {
       client?.release();
     }

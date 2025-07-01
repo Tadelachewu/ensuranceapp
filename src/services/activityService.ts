@@ -23,6 +23,10 @@ function dbToActivity(dbActivity: any): Activity {
 }
 
 export async function getRecentActivitiesByUserId(userId: string = USER_ID, limit: number = 5): Promise<Activity[]> {
+    if (!process.env.POSTGRES_URL) {
+        console.warn("POSTGRES_URL is not set. Returning empty array for activities.");
+        return [];
+    }
     let client;
     try {
       client = await pool.connect();
@@ -30,17 +34,20 @@ export async function getRecentActivitiesByUserId(userId: string = USER_ID, limi
       return res.rows.map(dbToActivity);
     } catch (err) {
       console.error('Database Error:', err);
+      // Return empty array to prevent app crash on DB connection issues or if table doesn't exist
       if (err instanceof Error && 'code' in err && err.code === '42P01') {
-          console.warn("`activities` table not found. Returning empty array.");
-          return [];
+        console.warn("`activities` table not found. Returning empty array.");
       }
-      throw new Error('Failed to fetch recent activities.');
+      return [];
     } finally {
       client?.release();
     }
 }
 
 export async function createActivity(activityData: Omit<Activity, 'id' | 'userId' | 'activityDate'>, userId: string = USER_ID): Promise<Activity> {
+    if (!process.env.POSTGRES_URL) {
+        throw new Error("Database is not configured. POSTGRES_URL is not set.");
+    }
     const { description, iconName } = activityData;
     let client;
     try {
