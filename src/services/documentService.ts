@@ -30,6 +30,17 @@ function dbToDocument(dbDoc: any): Document {
     };
 }
 
+function handleDbError(err: unknown, context: string): void {
+  console.error(`Database Error in ${context}:`, err);
+  if (err instanceof Error) {
+    const errCode = (err as any).code;
+    if (errCode === 'ECONNREFUSED') {
+      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+    } else if (errCode === '42P01') {
+      console.warn('Warning: A table was not found. Did you run `npm run db:setup`?');
+    }
+  }
+}
 
 export async function getDocumentsByUserId(userId: string = USER_ID): Promise<Document[]> {
     if (!process.env.POSTGRES_URL) {
@@ -42,10 +53,7 @@ export async function getDocumentsByUserId(userId: string = USER_ID): Promise<Do
       const res = await client.query('SELECT * FROM documents WHERE user_id = $1 ORDER BY upload_date DESC', [userId]);
       return res.rows.map(dbToDocument);
     } catch (err) {
-      console.error('Database Error:', err);
-      if (err instanceof Error && 'code' in err && err.code === '42P01') {
-          console.warn("`documents` table not found. Returning empty array.");
-      }
+      handleDbError(err, 'getDocumentsByUserId');
       return [];
     } finally {
       client?.release();

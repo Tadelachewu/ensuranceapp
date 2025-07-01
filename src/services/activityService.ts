@@ -22,6 +22,18 @@ function dbToActivity(dbActivity: any): Activity {
     };
 }
 
+function handleDbError(err: unknown, context: string): void {
+  console.error(`Database Error in ${context}:`, err);
+  if (err instanceof Error) {
+    const errCode = (err as any).code;
+    if (errCode === 'ECONNREFUSED') {
+      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+    } else if (errCode === '42P01') {
+      console.warn('Warning: A table was not found. Did you run `npm run db:setup`?');
+    }
+  }
+}
+
 export async function getRecentActivitiesByUserId(userId: string = USER_ID, limit: number = 5): Promise<Activity[]> {
     if (!process.env.POSTGRES_URL) {
         console.warn("POSTGRES_URL is not set. Returning empty array for activities.");
@@ -33,11 +45,7 @@ export async function getRecentActivitiesByUserId(userId: string = USER_ID, limi
       const res = await client.query('SELECT * FROM activities WHERE user_id = $1 ORDER BY activity_date DESC LIMIT $2', [userId, limit]);
       return res.rows.map(dbToActivity);
     } catch (err) {
-      console.error('Database Error:', err);
-      // Return empty array to prevent app crash on DB connection issues or if table doesn't exist
-      if (err instanceof Error && 'code' in err && err.code === '42P01') {
-        console.warn("`activities` table not found. Returning empty array.");
-      }
+      handleDbError(err, 'getRecentActivitiesByUserId');
       return [];
     } finally {
       client?.release();
@@ -61,7 +69,7 @@ export async function createActivity(activityData: Omit<Activity, 'id' | 'userId
       const res = await client.query(query, values);
       return dbToActivity(res.rows[0]);
     } catch (err) {
-      console.error('Database Error:', err);
+      handleDbError(err, 'createActivity');
       throw new Error('Failed to create activity.');
     } finally {
       client?.release();

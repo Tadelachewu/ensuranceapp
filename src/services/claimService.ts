@@ -28,6 +28,18 @@ function dbToClaim(dbClaim: any): Claim {
     };
 }
 
+function handleDbError(err: unknown, context: string): void {
+  console.error(`Database Error in ${context}:`, err);
+  if (err instanceof Error) {
+    const errCode = (err as any).code;
+    if (errCode === 'ECONNREFUSED') {
+      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+    } else if (errCode === '42P01') {
+      console.warn('Warning: A table was not found. Did you run `npm run db:setup`?');
+    }
+  }
+}
+
 export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 'userId' | 'status'>, userId: string = USER_ID): Promise<Claim> {
     if (!process.env.POSTGRES_URL) {
         throw new Error("Database is not configured. POSTGRES_URL is not set.");
@@ -46,7 +58,7 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       const res = await client.query(query, values);
       return dbToClaim(res.rows[0]);
     } catch (err) {
-      console.error('Database Error:', err);
+      handleDbError(err, 'createClaim');
       throw new Error('Failed to create claim.');
     } finally {
       client?.release();
@@ -64,10 +76,7 @@ export async function getClaimsByUserId(userId: string = USER_ID): Promise<Claim
       const res = await client.query('SELECT * FROM claims WHERE user_id = $1 ORDER BY incident_date DESC', [userId]);
       return res.rows.map(dbToClaim);
     } catch (err) {
-      console.error('Database Error:', err);
-      if (err instanceof Error && 'code' in err && err.code === '42P01') {
-          console.warn("`claims` table not found. Returning empty array.");
-      }
+      handleDbError(err, 'getClaimsByUserId');
       return [];
     } finally {
       client?.release();

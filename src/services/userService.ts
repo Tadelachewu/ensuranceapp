@@ -41,6 +41,18 @@ function dbToUserProfile(dbUser: any): UserProfile {
   };
 }
 
+function handleDbError(err: unknown, context: string): void {
+  console.error(`Database Error in ${context}:`, err);
+  if (err instanceof Error) {
+    const errCode = (err as any).code;
+    if (errCode === 'ECONNREFUSED') {
+      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+    } else if (errCode === '42P01') {
+      console.warn('Warning: The `users` table was not found. Did you run `npm run db:setup`?');
+    }
+  }
+}
+
 
 export async function getUserProfile(): Promise<UserProfile> {
   const fallbackUser = { ...defaultUser, familySize: defaultUser.family_size };
@@ -80,11 +92,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       return dbToUserProfile(res.rows[0]);
     }
   } catch (err) {
-    console.error('Database Error:', err);
-    // If the table doesn't exist or connection fails, return default user.
-    if (err instanceof Error && 'code' in err) {
-        console.warn(`Database error (${err.code}). Returning default user data.`);
-    }
+    handleDbError(err, 'getUserProfile');
     return fallbackUser;
   } finally {
     client?.release();
@@ -117,7 +125,7 @@ export async function updateUserProfile(profileData: Partial<UserProfile>): Prom
     ];
     await client.query(query, values);
   } catch (err) {
-    console.error('Database Error:', err);
+    handleDbError(err, 'updateUserProfile');
     throw new Error('Failed to update user profile.');
   } finally {
     client?.release();

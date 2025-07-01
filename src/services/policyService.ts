@@ -32,6 +32,18 @@ function dbToPolicy(dbPolicy: any): Policy {
   };
 }
 
+function handleDbError(err: unknown, context: string): void {
+  console.error(`Database Error in ${context}:`, err);
+  if (err instanceof Error) {
+    const errCode = (err as any).code;
+    if (errCode === 'ECONNREFUSED') {
+      console.error('DB connection refused. Is the DB server running and is the POSTGRES_URL correct?');
+    } else if (errCode === '42P01') {
+      console.warn('Warning: A table was not found. Did you run `npm run db:setup`?');
+    }
+  }
+}
+
 export async function getPoliciesByUserId(userId: string = USER_ID): Promise<Policy[]> {
   if (!process.env.POSTGRES_URL) {
       console.warn("POSTGRES_URL is not set. Returning empty array for policies.");
@@ -43,10 +55,7 @@ export async function getPoliciesByUserId(userId: string = USER_ID): Promise<Pol
     const res = await client.query('SELECT * FROM policies WHERE user_id = $1 ORDER BY start_date DESC', [userId]);
     return res.rows.map(dbToPolicy);
   } catch (err) {
-    console.error('Database Error:', err);
-    if (err instanceof Error && 'code' in err && err.code === '42P01') {
-        console.warn("`policies` table not found. Returning empty array.");
-    }
+    handleDbError(err, 'getPoliciesByUserId');
     return [];
   } finally {
     client?.release();
@@ -67,7 +76,7 @@ export async function getPolicyById(policyId: string): Promise<Policy | null> {
       }
       return null;
     } catch (err) {
-      console.error('Database Error:', err);
+      handleDbError(err, 'getPolicyById');
       return null;
     } finally {
       client?.release();
