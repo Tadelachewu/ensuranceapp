@@ -4,11 +4,19 @@ import fs from 'fs';
 import path from 'path';
 
 async function setupDatabase() {
-  console.log('Connecting to the database...');
-  const client = await pool.connect();
-  console.log('Successfully connected.');
+  // First, check if the environment variable is set at all. This gives the best error message.
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ Error: POSTGRES_URL environment variable not set.');
+    console.log('Please add your full PostgreSQL connection string to the .env file and try again.');
+    process.exit(1);
+  }
 
+  let client;
   try {
+    console.log('Connecting to the database...');
+    client = await pool.connect();
+    console.log('Successfully connected.');
+
     const schemaPath = path.join(__dirname, '..', 'sql', 'schema.sql');
     if (!fs.existsSync(schemaPath)) {
         console.error(`❌ Error: Schema file not found at ${schemaPath}`);
@@ -47,8 +55,11 @@ async function setupDatabase() {
     console.log('3. The user has permissions to CREATE tables and functions.');
     process.exit(1); // Exit with an error code
   } finally {
-    console.log('Closing database connection.');
-    await client.release();
+    if (client) {
+      console.log('Closing database connection.');
+      await client.release();
+    }
+    // Always end the pool to prevent the script from hanging.
     await pool.end();
   }
 }
