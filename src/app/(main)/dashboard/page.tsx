@@ -17,23 +17,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, FilePlus, Home, ShieldCheck, UserCheck } from "lucide-react";
+import { Car, FilePlus, Home, ShieldCheck, UserCheck, HelpCircle, type LucideProps } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { getPoliciesByUserId } from "@/services/policyService";
+import { getRecentActivitiesByUserId } from "@/services/activityService";
+import { format } from "date-fns";
 
-const policies = [
-  { id: "POL456789", type: "Auto Insurance", status: "Active", premium: 120.50, nextDue: "2024-08-01" },
-  { id: "POL123456", type: "Home Insurance", status: "Active", premium: 250.00, nextDue: "2024-07-25" },
-  { id: "POL789123", type: "Life Insurance", status: "Pending", premium: 75.00, nextDue: "2024-08-10" },
-];
+const iconMap: { [key: string]: React.FC<LucideProps> } = {
+  FilePlus,
+  ShieldCheck,
+  UserCheck,
+};
 
-const recentActivities = [
-    { description: "Claim #C-9876 submitted for Auto Policy.", date: "2 days ago", icon: FilePlus },
-    { description: "Home Insurance policy renewed.", date: "1 week ago", icon: ShieldCheck },
-    { description: "Profile information updated.", date: "3 weeks ago", icon: UserCheck },
-];
+export default async function DashboardPage() {
+  const policies = await getPoliciesByUserId();
+  const recentActivities = await getRecentActivitiesByUserId();
 
-export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <PageHeader
@@ -67,18 +67,27 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {policies.map((policy) => (
+                {policies.length > 0 ? policies.map((policy) => (
                   <TableRow key={policy.id}>
                     <TableCell className="font-medium">{policy.id}</TableCell>
-                    <TableCell>{policy.type}</TableCell>
+                    <TableCell>{policy.type} Insurance</TableCell>
                     <TableCell>
                       <Badge variant={policy.status === "Active" ? "default" : "secondary"} className={policy.status === "Active" ? "bg-green-100 text-green-800" : ""}>
                         {policy.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">${policy.premium.toFixed(2)} on {policy.nextDue}</TableCell>
+                    <TableCell className="text-right">
+                        {policy.premium > 0 && policy.nextDueDate ? 
+                            `$${policy.premium.toFixed(2)} on ${format(new Date(policy.nextDueDate), "LLL dd, y")}` :
+                            'N/A'
+                        }
+                    </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">No policies found.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -93,17 +102,24 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-4">
-                        <div className="bg-muted rounded-full p-2">
-                            <activity.icon className="h-5 w-5 text-muted-foreground" />
+                {recentActivities.length > 0 ? recentActivities.map((activity) => {
+                    const IconComponent = iconMap[activity.iconName] || HelpCircle;
+                    return (
+                        <div key={activity.id} className="flex items-start gap-4">
+                            <div className="bg-muted rounded-full p-2">
+                                <IconComponent className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium">{activity.description}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(activity.activityDate), "LLL dd, y")}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium">{activity.description}</p>
-                            <p className="text-xs text-muted-foreground">{activity.date}</p>
-                        </div>
+                    )
+                }) : (
+                    <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                        <p>No recent activity.</p>
                     </div>
-                ))}
+                )}
             </div>
           </CardContent>
         </Card>
