@@ -1,17 +1,12 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+// Ideally, this file would be named postgres.ts or db.ts.
+// Reusing it to work within system constraints.
+import { Pool } from 'pg';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-// Initialize Firebase
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-export { app, db };
+// This will use the POSTGRES_URL from your .env file
+// It is recommended to use an SSL connection for production databases.
+export const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: process.env.POSTGRES_URL ? {
+    rejectUnauthorized: false
+  } : false,
+});
