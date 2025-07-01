@@ -38,9 +38,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { createClaim } from "@/services/claimService";
+import { createActivity } from "@/services/activityService";
 
 const claimSchema = z.object({
-  policyNumber: z.string().regex(/^POL\d{6}$/, "Invalid policy number format (e.g., POL123456)"),
+  policyNumber: z.string().regex(/^POL\w{4,}-\d{13,}$/, "Invalid policy number format (e.g., POL-AUTO-1629384756)"),
   claimType: z.string({ required_error: "Please select a claim type." }),
   incidentDate: z.date({ required_error: "Date of incident is required." }),
   description: z.string().min(20, "Please provide a detailed description of at least 20 characters."),
@@ -54,25 +55,30 @@ export default function ClaimsPage() {
     const form = useForm<ClaimFormValues>({
         resolver: zodResolver(claimSchema),
         defaultValues: {
-            policyNumber: "POL",
+            policyNumber: "POL-",
         }
     });
 
   async function onSubmit(data: ClaimFormValues) {
     setIsSubmitting(true);
     try {
-        await createClaim({
+        const newClaim = await createClaim({
             policyId: data.policyNumber,
             type: data.claimType,
             incidentDate: format(data.incidentDate, "yyyy-MM-dd"),
             description: data.description,
         });
 
+        await createActivity({
+            description: `New claim submitted: ${newClaim.claimNumber}`,
+            iconName: "FilePlus",
+        });
+
         toast({
             title: "Claim Submitted Successfully!",
             description: `Your claim for policy ${data.policyNumber} has been received.`,
         });
-        form.reset({ policyNumber: "POL", description: "", claimType: undefined, incidentDate: undefined });
+        form.reset({ policyNumber: "POL-", description: "", claimType: undefined, incidentDate: undefined });
     } catch (error) {
         console.error("Failed to submit claim", error);
         toast({
@@ -109,7 +115,7 @@ export default function ClaimsPage() {
                     <FormItem>
                       <FormLabel>Policy Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., POL123456" {...field} />
+                        <Input placeholder="e.g., POL-AUTO-1629384756" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

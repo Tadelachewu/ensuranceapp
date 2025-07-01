@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
+import { useRouter } from "next/navigation";
+import { createPolicy } from "@/services/policyService";
+import { createActivity } from "@/services/activityService";
 
 import {
   Card,
@@ -32,11 +35,13 @@ const basePremiums: { [key: string]: number } = {
 
 export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [coverageAmount, setCoverageAmount] = useState(100000);
   const [deductible, setDeductible] = useState(500);
   const [monthlyPremium, setMonthlyPremium] = useState(0);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
   useEffect(() => {
@@ -78,6 +83,41 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
         setIsLoading(false);
     }
   };
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+    try {
+      const newPolicy = await createPolicy({
+        type: policyType.charAt(0).toUpperCase() + policyType.slice(1) as 'Auto' | 'Home' | 'Life' | 'Health',
+        premium: monthlyPremium,
+        coverageAmount: coverageAmount,
+        deductible: deductible,
+      });
+
+      await createActivity({
+        description: `New ${newPolicy.type} policy purchased: ${newPolicy.id}`,
+        iconName: "ShieldCheck",
+      });
+
+      toast({
+        title: "Policy Purchased!",
+        description: `Your new ${newPolicy.type} policy is now active.`,
+      });
+      
+      router.push('/dashboard');
+      router.refresh();
+    } catch (error) {
+      console.error("Error purchasing policy:", error);
+      toast({
+        variant: "destructive",
+        title: "Purchase Failed",
+        description: "There was an issue purchasing your policy. Please try again.",
+      });
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -162,7 +202,10 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full">Purchase Policy</Button>
+                <Button className="w-full" onClick={handlePurchase} disabled={isPurchasing}>
+                    {isPurchasing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Purchase Policy
+                </Button>
             </CardFooter>
             </Card>
         </div>
