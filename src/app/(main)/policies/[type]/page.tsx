@@ -21,7 +21,7 @@ const policyDetails: { [key: string]: { name: string; description: string } } = 
   health: { name: "Health Insurance", description: "Select the right health plan for your needs." },
 };
 
-export default function PolicyTypePage({ params }: PolicyTypePageProps) {
+export default async function PolicyTypePage({ params }: PolicyTypePageProps) {
   const { type } = params;
   const details = policyDetails[type] || { name: "Insurance", description: "Customize your policy." };
 
