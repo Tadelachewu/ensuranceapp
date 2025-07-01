@@ -1,4 +1,3 @@
-
 'use server';
 
 import { pool } from '@/lib/firebase'; // Filename is not ideal, but it contains our PG pool now.
