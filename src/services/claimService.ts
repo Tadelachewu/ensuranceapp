@@ -58,6 +58,7 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       return dbToClaim(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createClaim');
+
       // Pass the specific database error message for better frontend feedback
       throw new Error('Failed to create claim. ' + (err as Error).message);
     } finally {

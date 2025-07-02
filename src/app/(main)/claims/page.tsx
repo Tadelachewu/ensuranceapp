@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -305,4 +306,5 @@ export default function ClaimsPage() {
             </Card>
         </div>
     );
+
 }

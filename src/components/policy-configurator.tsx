@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
+
 import { createPolicy, PolicyData } from "@/services/policyService";
+
 
 import {
   Card,
@@ -39,7 +41,9 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   const [deductible, setDeductible] = useState(500);
   const [monthlyPremium, setMonthlyPremium] = useState(0);
 
+
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
@@ -85,6 +89,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
+
     const policyData: PolicyData = {
         policyType,
         coverageAmount,
@@ -112,7 +117,6 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
         setIsPurchasing(false);
     }
   }
-
   return (
     <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -198,7 +202,9 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                 </div>
             </CardContent>
             <CardFooter>
+
                 <Button className="w-full" onClick={handlePurchase} disabled={isPurchasing || isLoadingAi}>
+
                     {isPurchasing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Purchase Policy
                 </Button>
