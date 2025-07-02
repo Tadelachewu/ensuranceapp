@@ -30,10 +30,17 @@ export interface PolicyData {
 
 function dbToPolicy(dbPolicy: any): Policy {
   const policyType = dbPolicy.type.charAt(0).toUpperCase() + dbPolicy.type.slice(1);
+  const validTypes: Policy['type'][] = ['Auto', 'Home', 'Life', 'Health'];
+
+  if (!validTypes.includes(policyType)) {
+    // This provides a safeguard against unexpected data from the database.
+    throw new Error(`Invalid policy type "${policyType}" received from database for policy ID ${dbPolicy.id}.`);
+  }
+  
   return {
     id: dbPolicy.id,
     userId: dbPolicy.user_id,
-    type: policyType as Policy['type'],
+    type: policyType,
     status: dbPolicy.status,
     premium: parseFloat(dbPolicy.premium),
     coverageAmount: parseFloat(dbPolicy.coverage_amount),
@@ -97,6 +104,7 @@ export async function createPolicy(policyData: PolicyData, userId: string = USER
     endDate.setFullYear(startDate.getFullYear() + 1);
     const nextDueDate = new Date();
     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    const typeCapitalized = policyType.charAt(0).toUpperCase() + policyType.slice(1);
 
     let client;
     try {
@@ -109,7 +117,7 @@ export async function createPolicy(policyData: PolicyData, userId: string = USER
         const values = [
             policyId,
             userId,
-            policyType.charAt(0).toUpperCase() + policyType.slice(1),
+            typeCapitalized,
             'Active',
             premium,
             coverageAmount,
@@ -121,7 +129,7 @@ export async function createPolicy(policyData: PolicyData, userId: string = USER
         const res = await client.query(query, values);
 
         await createActivity({
-          description: `New ${policyType} insurance policy purchased.`,
+          description: `New ${typeCapitalized} insurance policy purchased.`,
           iconName: 'ShieldCheck'
         });
 

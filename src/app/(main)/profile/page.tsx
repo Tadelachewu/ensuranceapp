@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,11 +81,12 @@ export default function ProfilePage() {
         title: "Profile Updated",
         description: "Your information has been saved successfully.",
       });
+      router.refresh(); // Refresh the page to update sidebar info
     } catch (error) {
       console.error("Failed to update profile", error);
       toast({
-        title: "Error",
-        description: "Could not save your profile.",
+        title: "Error updating profile",
+        description: (error as Error).message,
         variant: "destructive",
       });
     }

@@ -17,17 +17,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, FilePlus, Home, ShieldCheck, UserCheck, HelpCircle, type LucideProps } from "lucide-react";
+import { Car, FilePlus, Home, ShieldCheck, UserCheck, HelpCircle, HeartPulse, type LucideProps } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getPoliciesByUserId } from "@/services/policyService";
 import { getRecentActivitiesByUserId } from "@/services/activityService";
 import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const iconMap: { [key: string]: React.FC<LucideProps> } = {
   FilePlus,
   ShieldCheck,
   UserCheck,
+  HeartPulse,
 };
 
 export default async function DashboardPage() {
@@ -161,7 +163,7 @@ export default async function DashboardPage() {
              <Link href="/policies/health" className="group">
                 <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardContent className="p-4 flex flex-col items-center text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 mb-4 text-primary"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <HeartPulse className="h-10 w-10 mb-4 text-primary" />
                         <h3 className="font-semibold mb-1">Health Insurance</h3>
                         <p className="text-sm text-muted-foreground">Comprehensive medical coverage for peace of mind.</p>
                     </CardContent>
