@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { recommendAddOns, RecommendAddOnsInput } from "@/ai/flows/smart-add-on-suggestions";
+import { createPolicy, PolicyData } from "@/services/policyService";
 
 import {
   Card,
@@ -32,11 +34,13 @@ const basePremiums: { [key: string]: number } = {
 
 export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [coverageAmount, setCoverageAmount] = useState(100000);
   const [deductible, setDeductible] = useState(500);
   const [monthlyPremium, setMonthlyPremium] = useState(0);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
   useEffect(() => {
@@ -46,7 +50,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
   }, [coverageAmount, deductible, policyType]);
 
   const getAiSuggestions = async () => {
-    setIsLoading(true);
+    setIsLoadingAi(true);
     setSuggestions([]);
     
     const input: RecommendAddOnsInput = {
@@ -72,12 +76,42 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to get AI suggestions. Please try again.",
+            description: "Failed to get AI suggestions. " + (error as Error).message,
         });
     } finally {
-        setIsLoading(false);
+        setIsLoadingAi(false);
     }
   };
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+    const policyData: PolicyData = {
+        policyType,
+        coverageAmount,
+        deductible,
+        premium: monthlyPremium,
+    };
+    try {
+        await createPolicy(policyData);
+        toast({
+            title: "Policy Purchased!",
+            description: "Your new policy is now active and available on your dashboard.",
+            variant: "default",
+            className: "bg-green-100 border-green-300 text-green-800"
+        });
+        router.push('/dashboard');
+        router.refresh();
+    } catch (error) {
+        console.error("Error purchasing policy:", error);
+        toast({
+            variant: "destructive",
+            title: "Purchase Failed",
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsPurchasing(false);
+    }
+  }
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -111,8 +145,8 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={getAiSuggestions} disabled={isLoading}>
-                        {isLoading ? (
+                    <Button onClick={getAiSuggestions} disabled={isLoadingAi || isPurchasing}>
+                        {isLoadingAi ? (
                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</>
                         ) : (
                             <><Sparkles className="mr-2 h-4 w-4" /> Get Suggestions</>
@@ -140,6 +174,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                         min={10000}
                         max={1000000}
                         step={10000}
+                        disabled={isPurchasing}
                     />
                 </div>
                 <div className="space-y-2">
@@ -153,6 +188,7 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                         min={250}
                         max={2500}
                         step={250}
+                        disabled={isPurchasing}
                     />
                 </div>
                 <Separator />
@@ -162,7 +198,10 @@ export function PolicyConfigurator({ policyType }: PolicyConfiguratorProps) {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full">Purchase Policy</Button>
+                <Button className="w-full" onClick={handlePurchase} disabled={isPurchasing || isLoadingAi}>
+                    {isPurchasing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Purchase Policy
+                </Button>
             </CardFooter>
             </Card>
         </div>

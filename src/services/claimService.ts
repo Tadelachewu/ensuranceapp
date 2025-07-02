@@ -3,6 +3,8 @@
 
 import { pool } from '@/lib/firebase';
 import { handleDbError } from '@/lib/db-errors';
+import { getPoliciesByUserId } from './policyService';
+import { createActivity } from './activityService';
 
 const USER_ID = "user_123";
 
@@ -46,10 +48,18 @@ export async function createClaim(claimData: Omit<Claim, 'id' | 'claimNumber' | 
       `;
       const values = [claimNumber, userId, policyId, type, incidentDate, description];
       const res = await client.query(query, values);
+      
+      // Log this action as a recent activity
+      await createActivity({
+        description: `New claim filed for policy #${policyId}.`,
+        iconName: 'FilePlus'
+      });
+
       return dbToClaim(res.rows[0]);
     } catch (err) {
       handleDbError(err, 'createClaim');
-      throw new Error('Failed to create claim.');
+      // Pass the specific database error message for better frontend feedback
+      throw new Error('Failed to create claim. ' + (err as Error).message);
     } finally {
       client?.release();
     }
@@ -71,4 +81,9 @@ export async function getClaimsByUserId(userId: string = USER_ID): Promise<Claim
     } finally {
       client?.release();
     }
+}
+
+export async function getActivePoliciesForClaims(userId: string = USER_ID) {
+    const policies = await getPoliciesByUserId(userId);
+    return policies.filter(p => p.status === 'Active');
 }
